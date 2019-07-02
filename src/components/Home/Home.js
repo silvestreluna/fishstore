@@ -32,7 +32,6 @@ class Home extends React.Component {
   }
 
   deleteOrder = (orderId) => {
-    console.error(orderId, 'you clicked a button');
     orderData.deleteOrder(orderId)
       .then(() => this.getOrders())
       .catch(err => console.error(err, 'Did delete'));
@@ -42,6 +41,24 @@ class Home extends React.Component {
     const fishOrderCopy = { ...this.state.fishOrder };
     fishOrderCopy[fishId] = fishOrderCopy[fishId] + 1 || 1;
     this.setState({ fishOrder: fishOrderCopy });
+  }
+
+  removeFromOrder = (fishId) => {
+    const fishOrderCopy = { ...this.state.fishOrder };
+    delete fishOrderCopy[fishId];
+    this.setState({ fishOrder: fishOrderCopy });
+  }
+
+  saveNewOrder = (orderName) => {
+    const newOrder = { fishes: { ...this.state.fishOrder }, name: orderName };
+    newOrder.dateTime = Date.now();
+    newOrder.uid = firebase.auth().currentUser.uid;
+    orderData.postOrder(newOrder)
+      .then(() => {
+        this.setState({ fishOrder: {} });
+        this.getOrders();
+      })
+      .catch(err => console.error(err, 'Nothing to post'));
   }
 
   render() {
@@ -56,6 +73,8 @@ class Home extends React.Component {
             <NewOrder
             fishes={fishes}
             fishOrder= {fishOrder}
+            removeFromOrder={this.removeFromOrder}
+            saveNewOrder={this.saveNewOrder}
             />
           </div>
           <div className="col">
