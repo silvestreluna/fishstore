@@ -4,6 +4,7 @@ import Inventory from '../Inventory/Inventory';
 import NewOrder from '../NewOrder/NewOrder';
 import Orders from '../Orders/Orders';
 
+
 import orderData from '../../helpers/data/orderData';
 import fishData from '../../helpers/data/fishData';
 
@@ -14,6 +15,7 @@ class Home extends React.Component {
   state = {
     orders: [],
     fishes: [],
+    fishOrder: {},
   }
 
   getOrders = () => {
@@ -30,22 +32,50 @@ class Home extends React.Component {
   }
 
   deleteOrder = (orderId) => {
-    console.error(orderId, 'you clicked a button');
     orderData.deleteOrder(orderId)
       .then(() => this.getOrders())
       .catch(err => console.error(err, 'Did delete'));
   }
 
+  addFishToOrder = (fishId) => {
+    const fishOrderCopy = { ...this.state.fishOrder };
+    fishOrderCopy[fishId] = fishOrderCopy[fishId] + 1 || 1;
+    this.setState({ fishOrder: fishOrderCopy });
+  }
+
+  removeFromOrder = (fishId) => {
+    const fishOrderCopy = { ...this.state.fishOrder };
+    delete fishOrderCopy[fishId];
+    this.setState({ fishOrder: fishOrderCopy });
+  }
+
+  saveNewOrder = (orderName) => {
+    const newOrder = { fishes: { ...this.state.fishOrder }, name: orderName };
+    newOrder.dateTime = Date.now();
+    newOrder.uid = firebase.auth().currentUser.uid;
+    orderData.postOrder(newOrder)
+      .then(() => {
+        this.setState({ fishOrder: {} });
+        this.getOrders();
+      })
+      .catch(err => console.error(err, 'Nothing to post'));
+  }
+
   render() {
-    const { fishes, orders } = this.state;
+    const { fishes, orders, fishOrder } = this.state;
     return (
       <div className="Home">
         <div className="row">
           <div className="col">
-            <Inventory fishes={fishes} />
+            <Inventory fishes={fishes} addFishToOrder={this.addFishToOrder} />
           </div>
           <div className="col">
-            <NewOrder />
+            <NewOrder
+            fishes={fishes}
+            fishOrder= {fishOrder}
+            removeFromOrder={this.removeFromOrder}
+            saveNewOrder={this.saveNewOrder}
+            />
           </div>
           <div className="col">
             <Orders orders={orders} deleteOrder={this.deleteOrder}/>
